@@ -1,0 +1,17 @@
+# Dev
+pip
+bumpversion
+pytest
+build
+twine
+pyyaml
+coverage
+pytest-cov
+pytest-xdist
+inotify
+
+# Code Quality
+ruff
+mypy[faster-cache]>=1.12
+pylint
+black
