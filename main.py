@@ -7,12 +7,6 @@ from dataclasses import dataclass
 from urllib3 import PoolManager
 
 HTTP_ERROR_LOWER_CODE = 400
-BAN_WORDS = [
-    "ai",
-    "mcp",
-    "apify",
-]
-
 type BanRexList = list[tuple[str, re.Pattern[str]]]
 
 
@@ -36,9 +30,9 @@ class GithubApiClient:
         }
 
 
-def build_ban_rex_list() -> BanRexList:
+def build_ban_rex_list(ban_words: list[str]) -> BanRexList:
     ret = []
-    for word in BAN_WORDS:
+    for word in ban_words:
         ret.append((word, re.compile(r"\b{}\b".format(word), re.IGNORECASE)))
     return ret
 
@@ -88,7 +82,9 @@ def reject_pr(
     )
 
 
-def check_pull_request(api: GithubApiClient, event: Event) -> None:
+def check_pull_request(
+    api: GithubApiClient, event: Event, ban_words: list[str]
+) -> None:
     pr_url = (
         f"https://api.github.com/repos/{event.repo_owner}/{event.repo_name}"
         f"/pulls/{event.pr_number}"
@@ -100,7 +96,7 @@ def check_pull_request(api: GithubApiClient, event: Event) -> None:
     match = find_ban_word_match(
         pr_details.get("title", "") or "",
         pr_details.get("body", "") or "",
-        build_ban_rex_list(),
+        build_ban_rex_list(ban_words),
     )
     if match[0]:
         reject_pr(api, event, match[0], match[1])
@@ -123,6 +119,11 @@ def get_env_var(name: str) -> str:
     return val
 
 
+def parse_csv_list(inp: str) -> list[str]:
+    items = [x.strip() for x in inp.split(",")]
+    return [x for x in items if x]
+
+
 if __name__ == "__main__":
     event = Event(
         token=get_env_var("GITHUB_TOKEN"),
@@ -130,4 +131,8 @@ if __name__ == "__main__":
         repo_name=get_env_var("GITHUB_REPOSITORY_NAME"),
         pr_number=int(get_env_var("PR_NUMBER")),
     )
-    check_pull_request(GithubApiClient(event.token), event)
+    check_pull_request(
+        GithubApiClient(event.token),
+        event,
+        parse_csv_list(get_env_var("INPUT_RESTRICTED_WORDS")),
+    )
