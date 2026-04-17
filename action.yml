@@ -5,6 +5,10 @@ inputs:
     description: 'Version of Python to use'
     required: false
     default: '3.12'
+  restricted-words:
+    description: "Comma-separated list of restricted words"
+    required: true
+    default: ''
 runs:
   using: "composite"
   steps:
