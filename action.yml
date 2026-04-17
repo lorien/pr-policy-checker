@@ -22,5 +22,7 @@ runs:
         pip install urllib3
     - name: Run the checker script
       shell: bash
+      env:
+        INPUT_RESTRICTED_WORDS: ${{ inputs.restricted-words }}
       run: |
         python ${{ github.action_path }}/main.py
